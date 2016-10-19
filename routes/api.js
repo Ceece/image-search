@@ -8,11 +8,19 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'API' });
 });
 
-router.get('/:term', function(req, res, next) {
+router.get('/search/:term', function(req, res, next) {
+  var db = req.db;
   var query = {
     skip: +req.query.offset || 0,
     top: 10
   };
+
+  var search = {
+    term: req.params.term,
+    when: new Date
+  };
+
+  db.collection('searches').insert(search);
 
   Bing.images(req.params.term, query, function(err, r, body){
     if (err)
@@ -26,6 +34,17 @@ router.get('/:term', function(req, res, next) {
       }
     }));
   });
+});
+
+router.get('/latest', function(req, res, next) {
+  var db = req.db;
+  db.collection('searches').find({}, {
+    fields: { _id: 0},
+    sort: {when: -1},
+    limit: 20
+  }).then((docs) => {
+    res.json(docs)
+  })
 });
 
 module.exports = router;
